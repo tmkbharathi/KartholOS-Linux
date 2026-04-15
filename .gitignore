@@ -1,0 +1,36 @@
+# Yocto Build Directories
+build/
+tmp/
+sstate-cache/
+downloads/
+
+# Poky and other layers (if cloned locally)
+poky/
+meta-openembedded/
+meta-qt6/
+
+# CMake / Qt Build Artifacts
+**/build/
+**/CMakeFiles/
+**/CMakeCache.txt
+**/cmake_install.cmake
+**/*.o
+**/*.a
+**/*.so
+**/*.user
+
+# OS / Image Outputs
+iso/
+*.iso
+*.wic
+*.wic.bz2
+*.vmdk
+*.qcow2
+
+# Editor / System Files
+.vscode/
+.idea/
+*.swp
+*.bak
+.DS_Store
+Thumbs.db
