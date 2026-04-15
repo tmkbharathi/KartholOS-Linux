@@ -42,22 +42,22 @@ jobs:
       - name: Setup Yocto (Poky)
         run: |
           git clone -b scarthgap https://git.yoctoproject.org/git/poky
-          git clone -b scarthgap https://git.yoctoproject.org/git/meta-qt6
+          git clone -b scarthgap https://code.qt.io/yocto/meta-qt6.git
           git clone -b scarthgap https://git.openembedded.org/meta-openembedded
 
       - name: Initialize Build Environment
         run: |
-          source poky/oe-init-build-env build
-          echo 'MACHINE = "qemux86-64"' >> conf/local.conf
-          echo 'DISTRO_FEATURES:append = " wayland opengl systemd"' >> conf/local.conf
-          echo 'VIRTUAL-RUNTIME_init_manager = "systemd"' >> conf/local.conf
-          echo 'BBLAYERS += " ${TOPDIR}/../meta-kartholos "' >> conf/bblayers.conf
-          echo 'BBLAYERS += " ${TOPDIR}/../meta-qt6 "' >> conf/bblayers.conf
-          echo 'BBLAYERS += " ${TOPDIR}/../meta-openembedded/meta-oe "' >> conf/bblayers.conf
+          # The source command must be in the same block as the configuration
+          bash -c "source poky/oe-init-build-env build && \
+          echo 'MACHINE = \"qemux86-64\"' >> conf/local.conf && \
+          echo 'DISTRO_FEATURES:append = \" wayland opengl systemd\"' >> conf/local.conf && \
+          echo 'VIRTUAL-RUNTIME_init_manager = \"systemd\"' >> conf/local.conf && \
+          echo 'BBLAYERS += \" ${TOPDIR}/../meta-kartholos \"' >> conf/bblayers.conf && \
+          echo 'BBLAYERS += \" ${TOPDIR}/../meta-qt6 \"' >> conf/bblayers.conf && \
+          echo 'BBLAYERS += \" ${TOPDIR}/../meta-openembedded/meta-oe \"' >> conf/bblayers.conf"
 
       - name: BitBake Build
         run: |
-          # Use a subshell to avoid persistent environment pollution
           bash -c "source poky/oe-init-build-env build && bitbake kartholos-image-qt6"
 
       - name: Upload ISO Artifact
