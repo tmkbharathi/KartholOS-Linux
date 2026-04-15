@@ -41,8 +41,8 @@ jobs:
 
       - name: Setup Yocto (Poky)
         run: |
-          git clone -b scarthgap https://git.yoctoproject.org/git/poky
-          git clone -b scarthgap https://code.qt.io/yocto/meta-qt6.git
+          git clone -b scarthgap https://git.yoctoproject.org/poky
+          git clone -b 6.7 https://code.qt.io/yocto/meta-qt6.git
           git clone -b scarthgap https://git.openembedded.org/meta-openembedded
 
       - name: Initialize Build Environment
