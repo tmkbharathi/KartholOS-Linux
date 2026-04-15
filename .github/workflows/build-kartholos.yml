@@ -52,9 +52,9 @@ jobs:
           echo 'MACHINE = \"qemux86-64\"' >> conf/local.conf && \
           echo 'DISTRO_FEATURES:append = \" wayland opengl systemd\"' >> conf/local.conf && \
           echo 'VIRTUAL-RUNTIME_init_manager = \"systemd\"' >> conf/local.conf && \
-          echo 'BBLAYERS += \" ${TOPDIR}/../meta-kartholos \"' >> conf/bblayers.conf && \
-          echo 'BBLAYERS += \" ${TOPDIR}/../meta-qt6 \"' >> conf/bblayers.conf && \
-          echo 'BBLAYERS += \" ${TOPDIR}/../meta-openembedded/meta-oe \"' >> conf/bblayers.conf"
+          bitbake-layers add-layer ../meta-qt6 && \
+          bitbake-layers add-layer ../meta-openembedded/meta-oe && \
+          bitbake-layers add-layer ../meta-kartholos"
 
       - name: BitBake Build
         run: |
