@@ -12,20 +12,30 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Maximize Build Space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 2048
+          temp-reserve-mb: 2048
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+
       - name: Install Yocto Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y gawk wget git diffstat unzip texinfo gcc build-essential \
           chrpath socat cpio python3 python3-pip python3-pexpect xz-utils debianutils \
-          iputils-ping python3-git python3-jinja2 libegl1-mesa libsdl1.2-dev \
-          pylint xterm python3-subunit mesa-common-dev zstd liblz4-tool
+          iputils-ping python3-git python3-jinja2 libegl1-mesa libsdl2-dev \
+          pylint xterm python3-subunit mesa-common-dev zstd liblz4-tool file libacl1
 
       - name: Setup Yocto (Poky)
         run: |
-          git clone -b scarthgap git://git.yoctoproject.org/poky
-          cd poky
-          git clone -b scarthgap git://git.yoctoproject.org/meta-qt6
-          git clone -b scarthgap git://git.openembedded.org/meta-openembedded
+          git clone -b scarthgap https://git.yoctoproject.org/git/poky
+          git clone -b scarthgap https://git.yoctoproject.org/git/meta-qt6
+          git clone -b scarthgap https://git.openembedded.org/meta-openembedded
 
       - name: Initialize Build Environment
         run: |
@@ -34,13 +44,13 @@ jobs:
           echo 'DISTRO_FEATURES:append = " wayland opengl systemd"' >> conf/local.conf
           echo 'VIRTUAL-RUNTIME_init_manager = "systemd"' >> conf/local.conf
           echo 'BBLAYERS += " ${TOPDIR}/../meta-kartholos "' >> conf/bblayers.conf
-          echo 'BBLAYERS += " ${TOPDIR}/../poky/meta-qt6 "' >> conf/bblayers.conf
-          echo 'BBLAYERS += " ${TOPDIR}/../poky/meta-openembedded/meta-oe "' >> conf/bblayers.conf
+          echo 'BBLAYERS += " ${TOPDIR}/../meta-qt6 "' >> conf/bblayers.conf
+          echo 'BBLAYERS += " ${TOPDIR}/../meta-openembedded/meta-oe "' >> conf/bblayers.conf
 
       - name: BitBake Build
         run: |
-          source poky/oe-init-build-env build
-          bitbake kartholos-image-qt6
+          # Use a subshell to avoid persistent environment pollution
+          bash -c "source poky/oe-init-build-env build && bitbake kartholos-image-qt6"
 
       - name: Upload ISO Artifact
         uses: actions/upload-artifact@v4
