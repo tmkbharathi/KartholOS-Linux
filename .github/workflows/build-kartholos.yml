@@ -8,60 +8,74 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
+
     steps:
+      # 1. Checkout repository
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Free Disk Space (Manual Cleanup)
+      # 2. Free disk space (important for Yocto)
+      - name: Free Disk Space
         run: |
-          echo "Initial disk space:"
+          echo "Disk space before cleanup:"
           df -h
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf /usr/local/lib/node_modules
           sudo rm -rf /usr/local/share/powershell
-          sudo rm -rf /usr/local/bin/aliyun
-          sudo rm -rf /usr/local/bin/azcopy
+          sudo rm -rf /usr/local/lib/node_modules
           sudo rm -rf /usr/local/bin/kubectl
-          sudo rm -rf /usr/local/bin/terraform
           sudo rm -rf /usr/local/bin/helm
+          sudo rm -rf /usr/local/bin/terraform
           sudo apt-get clean
           echo "Disk space after cleanup:"
           df -h
 
+      # 3. Install Yocto build dependencies
       - name: Install Yocto Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y gawk wget git diffstat unzip texinfo gcc build-essential \
-          chrpath socat cpio python3 python3-pip python3-pexpect xz-utils debianutils \
-          iputils-ping python3-git python3-jinja2 libegl1-mesa libsdl1.2-dev \
-          pylint xterm python3-subunit mesa-common-dev zstd liblz4-tool file libacl1
+          sudo apt-get install -y \
+            gawk wget git diffstat unzip texinfo gcc build-essential \
+            chrpath socat cpio python3 python3-pip python3-pexpect \
+            xz-utils debianutils iputils-ping python3-git python3-jinja2 \
+            libegl1-mesa libsdl1.2-dev pylint xterm python3-subunit \
+            mesa-common-dev zstd liblz4-tool file libacl1
 
-      - name: Setup Yocto (Poky)
+      # 4. Clone Yocto (Poky) and required layers
+      - name: Setup Yocto Layers
         run: |
           git clone -b scarthgap https://git.yoctoproject.org/poky
-          git clone -b 6.7 https://code.qt.io/yocto/meta-qt6.git
+          git clone -b scarthgap https://code.qt.io/yocto/meta-qt6.git
           git clone -b scarthgap https://git.openembedded.org/meta-openembedded
 
+      # 5. Initialize Yocto build environment and configure build
       - name: Initialize Build Environment
         run: |
-          # The source command must be in the same block as the configuration
-          bash -c "source poky/oe-init-build-env build && \
+          bash -c "
+          source poky/oe-init-build-env build && \
           echo 'MACHINE = \"qemux86-64\"' >> conf/local.conf && \
           echo 'DISTRO_FEATURES:append = \" wayland opengl systemd\"' >> conf/local.conf && \
           echo 'VIRTUAL-RUNTIME_init_manager = \"systemd\"' >> conf/local.conf && \
           bitbake-layers add-layer ../meta-qt6 && \
           bitbake-layers add-layer ../meta-openembedded/meta-oe && \
-          bitbake-layers add-layer ../meta-kartholos"
+          bitbake-layers add-layer ../meta-openembedded/meta-python && \
+          bitbake-layers add-layer ../meta-openembedded/meta-networking && \
+          bitbake-layers add-layer ../meta-openembedded/meta-filesystems && \
+          bitbake-layers add-layer ../meta-kartholos
+          "
 
-      - name: BitBake Build
+      # 6. Run BitBake build
+      - name: Build KartholOS Image
         run: |
-          bash -c "source poky/oe-init-build-env build && bitbake kartholos-image-qt6"
+          bash -c "
+          source poky/oe-init-build-env build && \
+          bitbake kartholos-image-qt6
+          "
 
+      # 7. Upload ISO artifact
       - name: Upload ISO Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: kartholos-image
+          name: kartholos-image-qt6
           path: build/tmp/deploy/images/qemux86-64/kartholos-image-qt6-qemux86-64.iso
