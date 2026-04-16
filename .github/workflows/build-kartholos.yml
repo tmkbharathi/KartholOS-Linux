@@ -46,7 +46,7 @@ jobs:
       - name: Setup Yocto Layers
         run: |
           git clone -b scarthgap https://git.yoctoproject.org/poky
-          git clone -b lts-6.8 https://code.qt.io/yocto/meta-qt6.git
+          git clone -b 6.8 https://code.qt.io/yocto/meta-qt6.git
           git clone -b scarthgap https://git.openembedded.org/meta-openembedded
 
       # 5. Initialize Yocto build environment and configure build
@@ -59,6 +59,7 @@ jobs:
             echo 'DISTRO_FEATURES:append = \" wayland opengl systemd pam usrmerge\"' >> conf/local.conf && \
             echo 'VIRTUAL-RUNTIME_init_manager = \"systemd\"' >> conf/local.conf && \
             echo 'QT_EDITION = \"opensource\"' >> conf/local.conf && \
+            echo 'QT_GIT_PROTOCOL = \"https\"' >> conf/local.conf && \
             bitbake-layers add-layer ../meta-openembedded/meta-oe && \
             bitbake-layers add-layer ../meta-openembedded/meta-python && \
             bitbake-layers add-layer ../meta-openembedded/meta-networking && \
