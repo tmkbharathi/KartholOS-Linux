@@ -13,16 +13,15 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Maximize Build Space
-        uses: easimon/maximize-build-space@v10
-        with:
-          root-reserve-mb: 2048
-          temp-reserve-mb: 2048
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
-          remove-docker-images: 'true'
+      - name: Clean Runner Space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/powershell
+          sudo rm -rf /usr/local/lib/node_modules
+          sudo apt-get clean
+          df -h
 
       - name: Check Disk Space
         run: df -h
