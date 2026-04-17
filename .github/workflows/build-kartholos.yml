@@ -10,28 +10,23 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      # 1. Checkout repository
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 2. Free disk space (important for Yocto)
       - name: Free Disk Space
         run: |
-          echo "Disk space before cleanup:"
           df -h
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /usr/local/share/powershell
-          sudo rm -rf /usr/local/lib/node_modules
-          sudo rm -rf /usr/local/bin/kubectl
-          sudo rm -rf /usr/local/bin/helm
-          sudo rm -rf /usr/local/bin/terraform
+          sudo rm -rf /usr/share/dotnet \
+                      /usr/local/lib/android \
+                      /opt/ghc \
+                      /usr/local/share/powershell \
+                      /usr/local/lib/node_modules \
+                      /usr/local/bin/kubectl \
+                      /usr/local/bin/helm \
+                      /usr/local/bin/terraform
           sudo apt-get clean
-          echo "Disk space after cleanup:"
           df -h
 
-      # 3. Install Yocto build dependencies
       - name: Install Yocto Dependencies
         run: |
           sudo apt-get update
@@ -42,7 +37,6 @@ jobs:
             libegl1-mesa libsdl1.2-dev xterm \
             mesa-common-dev zstd liblz4-tool file libacl1
 
-      # 4. Cache Yocto downloads and sstate
       - name: Cache Yocto downloads and sstate
         uses: actions/cache@v4
         with:
@@ -53,33 +47,27 @@ jobs:
           restore-keys: |
             yocto-${{ runner.os }}-
 
-      # 5. Clone Yocto (Poky) and required layers
       - name: Setup Yocto Layers
         run: |
           git clone -b scarthgap https://git.yoctoproject.org/poky
-          git clone -b 6.8 https://code.qt.io/yocto/meta-qt6.git
           git clone -b scarthgap https://git.openembedded.org/meta-openembedded
+          git clone -b 6.8 https://code.qt.io/yocto/meta-qt6.git
 
-      # 6. Initialize Yocto build environment and configure build
       - name: Initialize Build Environment
         run: |
           source poky/oe-init-build-env build
 
-          # Remove any previously corrupted lines (safety)
-          sed -i '/^[[:space:]]*MACHINE =/d' conf/local.conf
+          # Remove bad previous entries if workflow reruns
+          sed -i '/^MACHINE =/d' conf/local.conf
 
-          cat << 'EOF' >> conf/local.conf
-MACHINE = "qemux86-64"
-DISTRO_FEATURES:append = " wayland opengl systemd pam usrmerge"
-VIRTUAL-RUNTIME_init_manager = "systemd"
-QT_EDITION = "opensource"
-QT_GIT_PROTOCOL = "https"
-
-# GitHub Actions optimization
-BB_NUMBER_THREADS = "6"
-PARALLEL_MAKE = "-j6"
-INHERIT += "rm_work"
-EOF
+          echo 'MACHINE = "qemux86-64"' >> conf/local.conf
+          echo 'DISTRO_FEATURES:append = " wayland opengl systemd pam usrmerge"' >> conf/local.conf
+          echo 'VIRTUAL-RUNTIME_init_manager = "systemd"' >> conf/local.conf
+          echo 'QT_EDITION = "opensource"' >> conf/local.conf
+          echo 'QT_GIT_PROTOCOL = "https"' >> conf/local.conf
+          echo 'BB_NUMBER_THREADS = "6"' >> conf/local.conf
+          echo 'PARALLEL_MAKE = "-j6"' >> conf/local.conf
+          echo 'INHERIT += "rm_work"' >> conf/local.conf
 
           bitbake-layers add-layer ../meta-openembedded/meta-oe
           bitbake-layers add-layer ../meta-openembedded/meta-python
@@ -88,13 +76,11 @@ EOF
           bitbake-layers add-layer ../meta-qt6
           bitbake-layers add-layer ../meta-kartholos
 
-      # 7. Run BitBake build
       - name: Build KartholOS Image
         run: |
           source poky/oe-init-build-env build
           bitbake kartholos-image-qt6
 
-      # 8. Upload ISO artifact
       - name: Upload ISO Artifact
         uses: actions/upload-artifact@v4
         with:
