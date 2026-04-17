@@ -13,19 +13,19 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Free Disk Space
-        run: |
-          df -h
-          sudo rm -rf /usr/share/dotnet \
-                      /usr/local/lib/android \
-                      /opt/ghc \
-                      /usr/local/share/powershell \
-                      /usr/local/lib/node_modules \
-                      /usr/local/bin/kubectl \
-                      /usr/local/bin/helm \
-                      /usr/local/bin/terraform
-          sudo apt-get clean
-          df -h
+      - name: Maximize Build Space
+        uses: easimon/maximize-build-space@v10
+        with:
+          root-reserve-mb: 2048
+          temp-reserve-mb: 2048
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+
+      - name: Check Disk Space
+        run: df -h
 
       - name: Install Yocto Dependencies
         run: |
@@ -51,7 +51,6 @@ jobs:
         run: |
           git clone -b scarthgap https://git.yoctoproject.org/poky
           git clone -b scarthgap https://git.openembedded.org/meta-openembedded
-          git clone -b 6.8 https://code.qt.io/yocto/meta-qt6.git
 
       - name: Initialize Build Environment
         run: |
@@ -61,28 +60,30 @@ jobs:
           sed -i '/^MACHINE =/d' conf/local.conf
 
           echo 'MACHINE = "qemux86-64"' >> conf/local.conf
-          echo 'DISTRO_FEATURES:append = " wayland opengl systemd pam usrmerge"' >> conf/local.conf
+          echo 'DISTRO_FEATURES:append = " systemd pam usrmerge"' >> conf/local.conf
           echo 'VIRTUAL-RUNTIME_init_manager = "systemd"' >> conf/local.conf
-          echo 'QT_EDITION = "opensource"' >> conf/local.conf
-          echo 'QT_GIT_PROTOCOL = "https"' >> conf/local.conf
-          echo 'BB_NUMBER_THREADS = "6"' >> conf/local.conf
-          echo 'PARALLEL_MAKE = "-j6"' >> conf/local.conf
+          echo 'BB_NUMBER_THREADS = "4"' >> conf/local.conf
+          echo 'PARALLEL_MAKE = "-j4"' >> conf/local.conf
           echo 'INHERIT += "rm_work"' >> conf/local.conf
 
           bitbake-layers add-layer ../meta-openembedded/meta-oe
           bitbake-layers add-layer ../meta-openembedded/meta-python
           bitbake-layers add-layer ../meta-openembedded/meta-networking
           bitbake-layers add-layer ../meta-openembedded/meta-filesystems
-          bitbake-layers add-layer ../meta-qt6
           bitbake-layers add-layer ../meta-kartholos
 
       - name: Build KartholOS Image
         run: |
           source poky/oe-init-build-env build
-          bitbake kartholos-image-qt6
+          # Monitor disk space in background during build
+          (while true; do df -h /; sleep 600; done) &
+          bitbake kartholos-image-minimal
+
+      - name: Check Final Disk Space
+        run: df -h
 
       - name: Upload ISO Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: kartholos-image-qt6
-          path: build/tmp/deploy/images/qemux86-64/kartholos-image-qt6-qemux86-64.iso
+          name: kartholos-image-minimal
+          path: build/tmp/deploy/images/qemux86-64/kartholos-image-minimal-qemux86-64.iso
