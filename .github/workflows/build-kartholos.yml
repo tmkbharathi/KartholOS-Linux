@@ -42,7 +42,7 @@ jobs:
             libegl1-mesa libsdl1.2-dev xterm \
             mesa-common-dev zstd liblz4-tool file libacl1
 
-      #  4. Cache Yocto downloads and sstate (CRITICAL)
+      # 4. Cache Yocto downloads and sstate
       - name: Cache Yocto downloads and sstate
         uses: actions/cache@v4
         with:
@@ -63,37 +63,36 @@ jobs:
       # 6. Initialize Yocto build environment and configure build
       - name: Initialize Build Environment
         run: |
-          bash -c "
-            source poky/oe-init-build-env build &&
+          source poky/oe-init-build-env build
 
-            cat << 'EOF' >> conf/local.conf
-            MACHINE = \"qemux86-64\"
-            DISTRO_FEATURES:append = \" wayland opengl systemd pam usrmerge\"
-            VIRTUAL-RUNTIME_init_manager = \"systemd\"
-            QT_EDITION = \"opensource\"
-            QT_GIT_PROTOCOL = \"https\"
+          # Remove any previously corrupted lines (safety)
+          sed -i '/^[[:space:]]*MACHINE =/d' conf/local.conf
 
-            # GitHub Actions tuning
-            BB_NUMBER_THREADS = \"6\"
-            PARALLEL_MAKE = \"-j6\"
-            INHERIT += \"rm_work\"
-            EOF
+          cat << 'EOF' >> conf/local.conf
+MACHINE = "qemux86-64"
+DISTRO_FEATURES:append = " wayland opengl systemd pam usrmerge"
+VIRTUAL-RUNTIME_init_manager = "systemd"
+QT_EDITION = "opensource"
+QT_GIT_PROTOCOL = "https"
 
-            bitbake-layers add-layer ../meta-openembedded/meta-oe &&
-            bitbake-layers add-layer ../meta-openembedded/meta-python &&
-            bitbake-layers add-layer ../meta-openembedded/meta-networking &&
-            bitbake-layers add-layer ../meta-openembedded/meta-filesystems &&
-            bitbake-layers add-layer ../meta-qt6 &&
-            bitbake-layers add-layer ../meta-kartholos
-          "
+# GitHub Actions optimization
+BB_NUMBER_THREADS = "6"
+PARALLEL_MAKE = "-j6"
+INHERIT += "rm_work"
+EOF
+
+          bitbake-layers add-layer ../meta-openembedded/meta-oe
+          bitbake-layers add-layer ../meta-openembedded/meta-python
+          bitbake-layers add-layer ../meta-openembedded/meta-networking
+          bitbake-layers add-layer ../meta-openembedded/meta-filesystems
+          bitbake-layers add-layer ../meta-qt6
+          bitbake-layers add-layer ../meta-kartholos
 
       # 7. Run BitBake build
       - name: Build KartholOS Image
         run: |
-          bash -c "
-            source poky/oe-init-build-env build &&
-            bitbake kartholos-image-qt6
-          "
+          source poky/oe-init-build-env build
+          bitbake kartholos-image-qt6
 
       # 8. Upload ISO artifact
       - name: Upload ISO Artifact
