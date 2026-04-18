@@ -22,3 +22,6 @@ VIRTUAL-RUNTIME_initscripts = ""
 # Keep it lean
 IMAGE_OVERHEAD_FACTOR = "1.2"
 IMAGE_ROOTFS_SIZE = "65536" 
+
+# Generate a bootable ISO image
+IMAGE_FSTYPES:append = " iso"

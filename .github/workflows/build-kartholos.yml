@@ -60,6 +60,7 @@ jobs:
 
           echo 'MACHINE = "qemux86-64"' >> conf/local.conf
           echo 'DISTRO_FEATURES:append = " systemd pam usrmerge"' >> conf/local.conf
+          echo 'IMAGE_FSTYPES:append = " iso"' >> conf/local.conf
           echo 'VIRTUAL-RUNTIME_init_manager = "systemd"' >> conf/local.conf
           echo 'BB_NUMBER_THREADS = "4"' >> conf/local.conf
           echo 'PARALLEL_MAKE = "-j4"' >> conf/local.conf
@@ -85,4 +86,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: kartholos-image-minimal
-          path: build/tmp/deploy/images/qemux86-64/kartholos-image-minimal-qemux86-64.iso
+          path: build/tmp/deploy/images/qemux86-64/*.iso
