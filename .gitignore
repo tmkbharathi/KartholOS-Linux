@@ -34,3 +34,6 @@ iso/
 *.bak
 .DS_Store
 Thumbs.db
+
+# debug
+out/
