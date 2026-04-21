@@ -52,10 +52,30 @@ This repository is configured with a high-performance GitHub Actions workflow. S
 5. Run `bitbake kartholos-image-minimal`.
 
 ## 🖥 Running KartholOS
-Once built, you can run the minimal ISO in QEMU:
+
+### Automatic Boot (Yocto Environment)
+If you have the full Yocto environment set up, use the built-in helper:
 ```bash
 runqemu qemux86-64
 ```
+
+### Manual Boot (Windows / QEMU)
+If you have downloaded the `.iso` and want to run it directly using QEMU on Windows, use the following commands:
+
+**Standard Boot (Performance Mode):**
+```powershell
+qemu-system-x86_64 -m 1G -accel whpx,kernel-irqchip=off -cpu Westmere -device virtio-scsi-pci -device scsi-cd,drive=cd0 -drive file=out/kartholos-image-minimal-qemux86-64.rootfs.iso,if=none,id=cd0 -serial stdio
+```
+
+**Debug Mode (Enable Log Copying):**
+To copy boot logs, use the command above and select **"Serial console boot"** from the blue GRUB menu. The logs will stream to your terminal where they can be selected and copied.
+
+**Safe Mode (No Acceleration):**
+If hardware acceleration crashes, use this slower but stable command:
+```powershell
+qemu-system-x86_64 -m 1G -cdrom out/kartholos-image-minimal-qemux86-64.rootfs.iso -serial stdio
+```
+
 Access is available via the local console or SSH (if configured).
 
 ## 🗺 Roadmap
